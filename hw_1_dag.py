@@ -68,7 +68,7 @@ def create_dag(dag_id: str, m_name: str):
         s3_hook.load_file_obj(
             file_obj=filebuffer,
             bucket_name=BUCKET,
-            key=f'denis_spiridonov/{m_name}/datasets/data.pkl',
+            key=f'DenisSpiridonov/{m_name}/datasets/data.pkl',
             replace=True
         )
 
@@ -88,7 +88,7 @@ def create_dag(dag_id: str, m_name: str):
         start_time = datetime.now().isoformat()
 
         # Загрузка данных из S3
-        file = s3_hook.download_file(bucket_name=BUCKET, key=f'denis_spiridonov/{m_name}/datasets/data.pkl')
+        file = s3_hook.download_file(bucket_name=BUCKET, key=f'DenisSpiridonov/{m_name}/datasets/data.pkl')
         df = pd.read_pickle(file)
 
         # Разделяем на фичи и таргет, train и test
@@ -111,7 +111,7 @@ def create_dag(dag_id: str, m_name: str):
             s3_hook.load_file_obj(
                 file_obj=filebuffer,
                 bucket_name=BUCKET,
-                key=f'denis_spiridonov/{m_name}/datasets/{name}.pkl',
+                key=f'DenisSpiridonov/{m_name}/datasets/{name}.pkl',
                 replace=True
             )
 
@@ -132,7 +132,7 @@ def create_dag(dag_id: str, m_name: str):
         data = {}
         for name in ['X_train', 'X_test', 'y_train', 'y_test']:
             file = s3_hook.download_file(
-                key=f'denis_spiridonov/{m_name}/datasets/{name}.pkl',
+                key=f'DenisSpiridonov/{m_name}/datasets/{name}.pkl',
                 bucket_name=BUCKET
             )
             data[name] = pickle.load(open(file, 'rb'))
@@ -185,7 +185,7 @@ def create_dag(dag_id: str, m_name: str):
         s3_hook.load_file_obj(
             file_obj=filebuffer,
             bucket_name=BUCKET,
-            key=f'denis_spiridonov/{m_name}/results/metrics.json',
+            key=f'DenisSpiridonov/{m_name}/results/metrics.json',
             replace=True
         )
         print('Metrics saved to S3.')
