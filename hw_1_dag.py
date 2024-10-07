@@ -1,5 +1,6 @@
 import json
 import io
+import time
 from airflow.models import DAG, Variable
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
@@ -32,6 +33,13 @@ models = dict(
         DecisionTreeRegressor(),
     ])
 )
+
+
+def format_time_delta(start_time, end_time):
+    elapsed_time = end_time - start_time
+    formatted_time = time.strftime('%H:%M:%S', time.gmtime(elapsed_time.total_seconds()))
+    milliseconds = f'{int(elapsed_time.microseconds / 1000):03}'
+    return f'{formatted_time}:{milliseconds}'
 
 
 def create_dag(dag_id: str, m_name: str):
@@ -85,7 +93,7 @@ def create_dag(dag_id: str, m_name: str):
 
     def prepare_data(s3_hook, **kwargs):
         ti = kwargs['ti']
-        start_time = datetime.now().isoformat()
+        start_time = datetime.now()
 
         # Загрузка данных из S3
         file = s3_hook.download_file(bucket_name=BUCKET, key=f'DenisSpiridonov/{m_name}/datasets/data.pkl')
@@ -115,11 +123,11 @@ def create_dag(dag_id: str, m_name: str):
                 replace=True
             )
 
-        end_time = datetime.now().isoformat()
+        end_time = datetime.now()
+        duration = format_time_delta(start_time, end_time)
 
         metrics = {
-            'start_time': start_time,
-            'end_time': end_time,
+            'duration': duration,
             'features': df.columns.tolist()
         }
 
@@ -127,7 +135,7 @@ def create_dag(dag_id: str, m_name: str):
 
     def train_model(s3_hook, **kwargs):
         ti = kwargs['ti']
-        start_time = datetime.now().isoformat()
+        start_time = datetime.now()
 
         data = {}
         for name in ['X_train', 'X_test', 'y_train', 'y_test']:
@@ -149,11 +157,11 @@ def create_dag(dag_id: str, m_name: str):
             'mae': median_absolute_error(data['y_test'], predictions)
         }
 
-        end_time = datetime.now().isoformat()
+        end_time = datetime.now()
+        duration = format_time_delta(start_time, end_time)
 
         metrics = {
-            'start_time': start_time,
-            'end_time': end_time,
+            'duration': duration,
             'model_metrics': model_metrics
         }
 
