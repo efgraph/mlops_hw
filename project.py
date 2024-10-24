@@ -180,16 +180,22 @@ def train_model(m_name: str, **kwargs):
     # Данные с предыдущих шагов
     init_metrics = ti.xcom_pull(task_ids='init', key='metrics')
     parent_run_id = init_metrics['run_id']
+    experiment_id = init_metrics['experiment_id']
     prepare_data_metrics = ti.xcom_pull(task_ids='prepare_data', key='metrics')
     feature_names = prepare_data_metrics['features'][:-1]
 
     configure_mlflow()
-    experiment_name = "denis_spiridonov"
-    mlflow.set_experiment(experiment_name)
-    mlflow.sklearn.autolog()
 
     # Начинаем вложенный run для каждой модели
-    with mlflow.start_run(run_name=m_name, nested=True, tags={'mlflow.parentRunId': parent_run_id}) as run:
+    with mlflow.start_run(
+        run_name=m_name,
+        experiment_id=experiment_id,
+        nested=True,
+        parent_run_id=parent_run_id,
+        tags={'mlflow.parentRunId': parent_run_id}
+    ) as run:
+        mlflow.sklearn.autolog()
+
         model = models[m_name]
         model.fit(data['X_train'], data['y_train'])
         predictions = model.predict(data['X_test'])
@@ -213,7 +219,8 @@ def train_model(m_name: str, **kwargs):
         'start_time': start_time,
         'end_time': end_time,
         'model_name': m_name,
-        'run_id': run.info.run_id
+        'run_id': run.info.run_id,
+        'experiment_id': experiment_id
     }
 
     ti.xcom_push(key='metrics', value=metrics)
